@@ -6,8 +6,8 @@ GoPyLink enables seamless bidirectional function and method calls between Python
 
 ## Features
 
-- **Python Call Go** - Call Go functions, create Go type instances and invoke methods
-- **Go Call Python** - Call Python functions, create Python class instances and invoke methods
+- **Python Call Go** - Python call Go functions, create Go type instances and invoke methods
+- **Go Call Python** - Go call Python functions, create Python class instances and invoke methods
 - **Simple API** - Minimal setup with intuitive interfaces
 
 ## Installation
@@ -33,7 +33,7 @@ Create a `main.go` file:
 ```go
 package main
 
-import "github.com/ray4go/go-ray/gopylink"
+import "github.com/ray4go/gopylink"
 
 // Functions to export - all exported methods become callable from Python
 type Functions struct{}
@@ -135,7 +135,7 @@ package main
 
 import (
     "fmt"
-    "github.com/ray4go/go-ray/gopylink"
+    "github.com/ray4go/gopylink"
 )
 
 type Functions struct{}

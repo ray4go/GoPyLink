@@ -23,7 +23,7 @@ func (r PythonResult) Get() (any, error) {
 	return ray.LocalPyCallResult(r).Get()
 }
 
-// PythonObjectHandle represents a handle to a Python object .
+// PythonObjectHandle represents a handle to a Python class instance.
 type PythonObjectHandle ray.PythonObjectHandle
 
 // MethodCall calls a method on the local Python class instance.

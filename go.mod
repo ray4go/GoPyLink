@@ -1,4 +1,4 @@
-module gopylink
+module github.com/ray4go/gopylink
 
 go 1.21
 
