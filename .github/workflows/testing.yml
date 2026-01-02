@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Python dependencies
+      run: |
+        pip install .
+        rm -r gopylink
+        pip install -r tests/requirements.txt
+
+    - name: Run examples
+      run: ls examples/*/run.sh | xargs -n 1 bash -e
+      env:
+        RAY_RUNTIME_ENV_IGNORE_GITIGNORE: 1
