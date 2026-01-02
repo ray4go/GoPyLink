@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import functools
+from typing import Optional
 
 import gorayffi
 from gorayffi import cmds, handlers
 from gorayffi.actor import GolangLocalActor
+
 from . import registry as registry_module
 
 global_registry = registry_module.PythonRegistry()
@@ -13,7 +15,7 @@ global_registry = registry_module.PythonRegistry()
 @functools.lru_cache(maxsize=None)
 def load_go_lib(
     libpath: str,
-    python_registry: registry_module.PythonRegistry = None,
+    python_registry: Optional[registry_module.PythonRegistry] = None,
 ) -> GolangClient:
     """
     Load a golang shared library, export python functions/classes to golang.
