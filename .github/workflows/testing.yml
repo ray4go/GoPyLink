@@ -1,4 +1,4 @@
-name: CI
+name: Testing
 
 on:
   push:
@@ -23,13 +23,16 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install Python dependencies
+    - name: Install dependencies
       run: |
+        pip install git+https://github.com/ray4go/go-ray.git
         pip install .
         rm -r gopylink
         pip install -r tests/requirements.txt
+        go get -u github.com/ray4go/go-ray/ray@master
 
     - name: Run examples
       run: ls examples/*/run.sh | xargs -n 1 bash -e
-      env:
-        RAY_RUNTIME_ENV_IGNORE_GITIGNORE: 1
+
+    - name: Run tests
+      run: bash tests/run.sh
