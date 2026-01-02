@@ -1,10 +1,53 @@
+from __future__ import annotations
+
 import functools
 
-from gorayffi import cmds, ffi, handlers, registry
+import gorayffi
+from gorayffi import cmds, handlers
 from gorayffi.actor import GolangLocalActor
+from . import registry as registry_module
+
+global_registry = registry_module.PythonRegistry()
 
 
-class CrossLanguageClient:
+@functools.lru_cache(maxsize=None)
+def load_go_lib(
+    libpath: str,
+    python_registry: registry_module.PythonRegistry = None,
+) -> GolangClient:
+    """
+    Load a golang shared library, export python functions/classes to golang.
+    Return the golang handler, which you can call golang functions/types defined in it.
+
+    :param libpath: The path to the go shared library.
+    :param python_registry: The registry to use for exporting python functions/classes.
+    :return:
+    """
+    python_registry = python_registry or global_registry
+    cmder = gorayffi.load_go_lib(
+        libpath,
+        handlers.get_handlers(
+            python_registry.get_export_python_func,
+            python_registry.get_export_python_class,
+        ),
+    )
+    return GolangClient(cmder)
+
+
+def export(func):
+    """
+    Decorator to register a python function/class to be called from go.
+
+    Usage:
+    @export
+    def my_func(arg1, arg2):
+        ...
+    """
+    global_registry.export(func)
+    return func
+
+
+class GolangClient:
     def __init__(self, cmder: cmds.GoCommander):
         self._cmder = cmder
 
@@ -27,22 +70,3 @@ class CrossLanguageClient:
         :return: The golang type instance.
         """
         return GolangLocalActor(self._cmder, type_name, *args)
-
-
-@functools.lru_cache(maxsize=None)
-def load_go_lib(libpath: str) -> CrossLanguageClient:
-    cmder = ffi.load_go_lib(libpath, handlers.cmds_dispatcher(handlers.handlers))
-    return CrossLanguageClient(cmder)
-
-
-def export(func):
-    """
-    Register a python function/class to be called from go.
-
-    Usage:
-    @export
-    def my_func(arg1, arg2):
-        ...
-    """
-    registry.export_python(func)
-    return func

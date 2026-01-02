@@ -13,11 +13,13 @@ GoPyLink enables seamless bidirectional function and method calls between Python
 ## Installation
 
 **Go**
+
 ```bash
 go get github.com/ray4go/go-ray/gopylink
 ```
 
 **Python**
+
 ```bash
 pip install gopylink
 ```
@@ -28,7 +30,7 @@ Requires: Go 1.21+, Python 3.7+
 
 ### 1. Write Go Code
 
-Create a `main.go` file:
+Create a `lib.go` file:
 
 ```go
 package main
@@ -39,35 +41,35 @@ import "github.com/ray4go/gopylink"
 type Functions struct{}
 
 func (Functions) Hello(name string) string {
-    return "Hello " + name
+	return "Hello " + name
 }
 
 func (Functions) Add(a, b int) int {
-    return a + b
+	return a + b
 }
 
 // Classes to export - each method creates a new instance
 type Classes struct{}
 
 type Counter struct {
-    value int
+	value int
 }
 
 func (Classes) Counter(initial int) *Counter {
-    return &Counter{value: initial}
+	return &Counter{value: initial}
 }
 
 func (c *Counter) Incr(n int) int {
-    c.value += n
-    return c.value
+	c.value += n
+	return c.value
 }
 
 func (c *Counter) Value() int {
-    return c.value
+	return c.value
 }
 
 func init() {
-    gopylink.Init(Functions{}, Classes{})
+	gopylink.Init(Functions{}, Classes{})
 }
 
 func main() {}
@@ -76,16 +78,17 @@ func main() {}
 ### 2. Build Go Shared Library
 
 ```bash
-go build -buildmode=c-shared -o mylib.so .
+go build -buildmode=c-shared -o go.lib .
 ```
 
 ### 3. Call Go from Python
 
 ```python
-from gopylink import load_go_lib
+# main.py
+import gopylink
 
 # Load the Go library
-lib = load_go_lib("./mylib.so")
+lib = gopylink.load_go_lib("go.lib")
 
 # Call Go functions
 result = lib.func_call("Hello", "World")
@@ -96,211 +99,137 @@ print(result)  # Output: 30
 
 # Create Go type instance and call methods
 counter = lib.new_type("Counter", 0)
-print(counter.Incr(5))   # Output: 5
-print(counter.Incr(3))   # Output: 8
-print(counter.Value())   # Output: 8
+print(counter.Incr(5))  # Output: 5
+print(counter.Incr(3))  # Output: 8
+print(counter.Value())  # Output: 8
+```
+
+Run the python script:
+
+```bash
+python main.py
 ```
 
 ## Go Call Python
 
-GoPyLink also supports calling Python from Go.
-
 ### 1. Define Python Functions/Classes
 
 ```python
-from gopylink import export
+# main.py
+import gopylink
 
-@export
+
+@gopylink.export
 def greet(name: str) -> str:
     return f"Hi, {name}!"
 
-@export
+
+@gopylink.export
 def multiply(a, b):
     return a * b
 
-@export
-class Calculator:
+
+@gopylink.export
+class Counter:
     def __init__(self, initial=0):
         self.value = initial
 
-    def add(self, n):
+    def incr(self, n):
         self.value += n
         return self.value
+
+
+lib = gopylink.load_go_lib("out/go.lib")
+lib.func_call("Start")  # Start the Go logic
 ```
 
-### 2. Call from Go
+### 2. Call Python from Go
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/ray4go/gopylink"
+	"fmt"
+	"github.com/ray4go/gopylink"
 )
 
-type Functions struct{}
+type functions struct{}
 
-func (Functions) CallPythonDemo() {
-    // Call Python function
-    result := gopylink.PythonFuncCall("greet", "Gopher")
-    val, _ := result.Get()
-    fmt.Println(val)  // Output: Hi, Gopher!
+func (functions) Start() {
+	// Call Python function
+	result := gopylink.PythonFuncCall("greet", "Gopher")
+	val, err := result.Get()
+	fmt.Printf("greet: %v, err: %v\n", val, err) // Output: greet: Hello, Gopher!, err: <nil>
 
-    // Call with typed result
-    product, _ := gopylink.Get[int](gopylink.PythonFuncCall("multiply", 6, 7))
-    fmt.Println(product)  // Output: 42
+	// Call with typed result
+	result = gopylink.PythonFuncCall("multiply", 6, 7)
+	product, err := gopylink.Get[int](result)
+	fmt.Printf("multiply: %v, err: %v\n", product, err) // Output: multiply: 42, err: <nil>
 
-    // Create Python class instance
-    calc := gopylink.NewPythonClassInstance("Calculator", 10)
-    defer calc.Close()
+	// Create Python class instance
+	cnt := gopylink.NewPythonClassInstance("Counter", 10)
+	defer cnt.Close()
 
-    res := calc.MethodCall("add", 5)
-    val, _ = res.Get()
-    fmt.Println(val)  // Output: 15
+	res := cnt.MethodCall("incr", 5)
+	val, err = res.Get()
+	fmt.Printf("Counter.incr: %v, err: %v\n", val, err) // Output: Counter.incr: 15, err: <nil>
 }
 
 func init() {
-    gopylink.Init(Functions{}, nil)
+	gopylink.Init(functions{}, nil)
 }
 
 func main() {}
 ```
 
-### 3. Run from Python
+### 3. Build and Run
 
-```python
-from gopylink import load_go_lib, export
-
-# Define Python functions first
-@export
-def greet(name: str) -> str:
-    return f"Hi, {name}!"
-
-@export
-def multiply(a, b):
-    return a * b
-
-# Load Go library and call
-lib = load_go_lib("./mylib.so")
-lib.func_call("CallPythonDemo")
+```bash
+go build -buildmode=c-shared -o go.lib .
+python main.py
 ```
 
 ## API Reference
 
 ### Python API
 
-| Function | Description |
-|----------|-------------|
-| `load_go_lib(path)` | Load a Go shared library, returns a `CrossLanguageClient` |
-| `lib.func_call(name, *args)` | Call a Go function by name |
-| `lib.new_type(name, *args)` | Create a Go type instance |
-| `@export` | Decorator to export Python function/class to Go |
+| Function                     | Description                                               |
+|------------------------------|-----------------------------------------------------------|
+| `load_go_lib(path)`          | Load a Go shared library, returns a `CrossLanguageClient` |
+| `lib.func_call(name, *args)` | Call a Go function by name                                |
+| `lib.new_type(name, *args)`  | Create a Go type instance                                 |
+| `@export`                    | Decorator to export Python function/class to Go           |
 
 ### Go API
 
-| Function | Description |
-|----------|-------------|
-| `Init(funcRegister, classRegister)` | Initialize and register Go functions/classes |
-| `PythonFuncCall(name, args...)` | Call a Python function |
-| `NewPythonClassInstance(name, args...)` | Create a Python class instance |
-| `Get[T](result)` | Get typed result from Python call |
-| `result.Get()` | Get result as `(any, error)` |
-| `handle.MethodCall(name, args...)` | Call method on Python instance |
-| `handle.Close()` | Release Python instance |
+| Function                                | Description                                  |
+|-----------------------------------------|----------------------------------------------|
+| `Init(funcRegister, classRegister)`     | Initialize and register Go functions/classes |
+| `PythonFuncCall(name, args...)`         | Call a Python function                       |
+| `NewPythonClassInstance(name, args...)` | Create a Python class instance               |
+| `Get[T](result)`                        | Get typed result from Python call            |
+| `result.Get()`                          | Get result as `(any, error)`                 |
+| `handle.MethodCall(name, args...)`      | Call method on Python instance               |
+| `handle.Close()`                        | Release Python instance                      |
 
 ## Type Conversion
 
 Types are automatically converted via msgpack:
 
-| Go Type | Python Type |
-|---------|-------------|
-| `int`, `int64`, etc. | `int` |
-| `float32`, `float64` | `float` |
-| `bool` | `bool` |
-| `string` | `str` |
-| `[]byte` | `bytes` |
-| slice, array | `list` |
-| `map` | `dict` |
-| `struct` | `dict` |
-| `nil` | `None` |
+| Go Type              | Python Type |
+|----------------------|-------------|
+| `int`, `int64`, etc. | `int`       |
+| `float32`, `float64` | `float`     |
+| `bool`               | `bool`      |
+| `string`             | `str`       |
+| `[]byte`             | `bytes`     |
+| slice, array         | `list`      |
+| `map`                | `dict`      |
+| `struct`             | `dict`      |
+| `nil`                | `None`      |
 
-For detailed type conversion rules, see the [Cross-Language Type Conversion Guide](https://github.com/ray4go/go-ray/blob/master/docs/crosslang_types.md).
-
-## Complete Example
-
-**app.go:**
-```go
-package main
-
-import (
-    "fmt"
-    "github.com/ray4go/go-ray/gopylink"
-)
-
-type Functions struct{}
-
-func (Functions) Echo(args ...any) []any {
-    return args
-}
-
-func (Functions) GoCallsPython() {
-    result := gopylink.PythonFuncCall("process", "data from go")
-    val, _ := result.Get()
-    fmt.Printf("Python returned: %v\n", val)
-}
-
-type Classes struct{}
-
-type Storage struct {
-    data map[string]any
-}
-
-func (Classes) Storage() *Storage {
-    return &Storage{data: make(map[string]any)}
-}
-
-func (s *Storage) Set(key string, value any) {
-    s.data[key] = value
-}
-
-func (s *Storage) Get(key string) any {
-    return s.data[key]
-}
-
-func init() {
-    gopylink.Init(Functions{}, Classes{})
-}
-
-func main() {}
-```
-
-**main.py:**
-```python
-from gopylink import load_go_lib, export
-
-@export
-def process(data):
-    return f"Processed: {data}"
-
-lib = load_go_lib("./app.so")
-
-# Python calls Go
-print(lib.func_call("Echo", 1, "hello", [1, 2, 3]))
-
-# Go calls Python
-lib.func_call("GoCallsPython")
-
-# Use Go class from Python
-storage = lib.new_type("Storage")
-storage.Set("key1", {"nested": "value"})
-print(storage.Get("key1"))
-```
-
-**Build and run:**
-```bash
-go build -buildmode=c-shared -o app.so .
-python main.py
-```
+For detailed type conversion rules, see
+the [Cross-Language Type Conversion Guide](https://github.com/ray4go/go-ray/blob/master/docs/crosslang_types.md).
 
 ## Thread Safety
 
@@ -308,16 +237,22 @@ GoPyLink operations are thread-safe. Multiple goroutines/threads can safely call
 
 ## Performance Notes
 
-Go FFI has approximately **30ns overhead** per call compared to native C/C++ FFI due to Go's virtual stack. This overhead is:
+Go FFI has approximately **30ns overhead** per call compared to native C/C++ FFI due to Go's virtual stack. This
+overhead is:
+
 - **Negligible** for coarse-grained operations
 - **Significant** for micro-calls requiring millions of invocations per second
 
-## Limitations
+## Best Practices
 
-- Only positional arguments supported (no keyword arguments)
-- Interface types (`interface{}`) should be avoided in Go signatures
-- Go `error` type not supported as return value (use string/int error codes instead)
-- Recursive data structures may cause msgpack serialization issues
+Golang Parameter and return types:
+
+- Parameter and return types can be primitive types, composites, structs, and their pointers.
+- You should not use interface types as return values except for `any` type.
+
+Golang Error handling:
+
+- Do not return `error` (as it is an interface). Prefer numeric or string error codes/messages.
 
 ## License
 
