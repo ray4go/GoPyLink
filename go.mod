@@ -2,7 +2,7 @@ module github.com/ray4go/gopylink
 
 go 1.21
 
-require github.com/ray4go/go-ray/ray v1.1.0
+require github.com/ray4go/go-ray/ray v1.2.0
 
 require (
 	github.com/bytedance/gg v1.1.0 // indirect

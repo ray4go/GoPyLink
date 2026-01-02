@@ -16,7 +16,7 @@ authors = [
     { name = "WeiminWang", email = "wang0.618@qq.com" }
 ]
 license = "MIT"
-dependencies = ["goray"]
+dependencies = ["goray>=1.2.0"]
 
 [project.urls]
 Homepage = "https://github.com/ray4go/GoPyLink"
