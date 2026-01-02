@@ -2,8 +2,6 @@
 
 A lightweight Python & Go cross-language call framework for in-process communication.
 
-GoPyLink enables seamless bidirectional function and method calls between Python and Go within the same process.
-
 ## Features
 
 - **Python Call Go** - Python call Go functions, create Go type instances and invoke methods
@@ -25,6 +23,21 @@ pip install gopylink
 ```
 
 Requires: Go 1.21+, Python 3.7+
+
+<details>
+  <summary>C build environment is required, click to show installation commands. </summary>
+
+```bash
+# Ubuntu/Debian
+sudo apt install build-essential
+
+# CentOS/RHEL
+sudo yum groupinstall "Development Tools"
+
+# macOS
+xcode-select --install
+```
+</details>
 
 ## Quick Start
 
@@ -139,7 +152,7 @@ class Counter:
         return self.value
 
 
-lib = gopylink.load_go_lib("out/go.lib")
+lib = gopylink.load_go_lib("go.lib")
 lib.func_call("Start")  # Start the Go logic
 ```
 
@@ -193,12 +206,12 @@ python main.py
 
 ### Python API
 
-| Function                     | Description                                               |
-|------------------------------|-----------------------------------------------------------|
-| `load_go_lib(path)`          | Load a Go shared library, returns a `CrossLanguageClient` |
-| `lib.func_call(name, *args)` | Call a Go function by name                                |
-| `lib.new_type(name, *args)`  | Create a Go type instance                                 |
-| `@export`                    | Decorator to export Python function/class to Go           |
+| Function                     | Description                                     |
+|------------------------------|-------------------------------------------------|
+| `load_go_lib(path)`          | Load a Go shared library                        |
+| `lib.func_call(name, *args)` | Call a Go function by name                      |
+| `lib.new_type(name, *args)`  | Create a Go type instance                       |
+| `@export`                    | Decorator to export Python function/class to Go |
 
 ### Go API
 
