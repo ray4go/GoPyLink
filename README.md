@@ -8,6 +8,13 @@ A lightweight Python & Go cross-language call framework for in-process communica
 - **Go Call Python** - Go call Python functions, create Python class instances and invoke methods
 - **Simple API** - Minimal setup with intuitive interfaces
 
+## Limitations
+
+GoPyLink is designed for **data exchange only**. All function parameters and return values must be plain data types (primitives, collections, structs with all fields public).
+
+Channels, goroutines, functions and interface types (except `any`) are not supported as parameters or return values.
+
+
 ## Installation
 
 **Go**
@@ -258,14 +265,18 @@ overhead is:
 
 ## Best Practices
 
-Golang Parameter and return types:
+**Golang Parameter and return types**
 
 - Prefer concrete types (primitive types, composites, structs, and their pointers) over interface types for parameters
 - Do not use interface types as return values except for `any` type.
 
-Golang Error handling:
+**Golang Error handling**
 
-- Do not return `error` (as it is an interface). Prefer numeric or string error codes/messages.
+Do not return `error` (as it is an interface) directly from Ray Task functon / Actor methods. Instead, return concrete
+types to indicate errors (e.g., return int for error code), or just `panic` in your code.
+
+When `ObjectRef.GetAll()` / `ObjectRef.Getinto()` / `ray.GetN(obj)` is called on a panic-ed task/actor, it will return an error.
+You can use `fmt.Printf("%+v", err)` to print the error stack trace.
 
 ## License
 
