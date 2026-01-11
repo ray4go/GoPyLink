@@ -54,8 +54,8 @@ jobs:
           # Extract tag name
           TAG=${GITHUB_REF#refs/tags/}
           echo "Publishing Go module version: $TAG"
-          
           # Trigger Go proxy to update module version
-          GOPROXY=https://proxy.golang.org GO111MODULE=on go get github.com/ray4go/gopylink@$TAG
-          
+          GOPROXY=https://proxy.golang.org GO111MODULE=on go list -m "github.comray4go/gopylink@$TAG"
+          # Update pkg.go.dev
+          curl "https://pkg.go.dev/fetch/github.com/ray4go/gopylink@$TAG" -X 'POST' -H 'accept: */*' -H 'content-length: 0' -v
           echo "Go module version update triggered successfully"
