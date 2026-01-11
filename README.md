@@ -46,9 +46,9 @@ xcode-select --install
 ```
 </details>
 
-## Quick Start
+## Python calling Go
 
-### 1. Write Go Code
+### 1. Export Go Functions/Types
 
 Create a `lib.go` file:
 
@@ -130,24 +130,21 @@ Run the python script:
 python main.py
 ```
 
-## Go Call Python
+## Go calling Python
 
-### 1. Define Python Functions/Classes
+### 1. Export Python Functions/Classes
 
 ```python
 # main.py
 import gopylink
 
-
 @gopylink.export
 def greet(name: str) -> str:
     return f"Hi, {name}!"
 
-
 @gopylink.export
 def multiply(a, b):
     return a * b
-
 
 @gopylink.export
 class Counter:
@@ -158,9 +155,9 @@ class Counter:
         self.value += n
         return self.value
 
-
-lib = gopylink.load_go_lib("go.lib")
-lib.func_call("Start")  # Start the Go logic
+if __name__ == "__main__":
+    lib = gopylink.load_go_lib("go.lib")
+    lib.func_call("Start")  # Start the Go logic
 ```
 
 ### 2. Call Python from Go
@@ -209,6 +206,8 @@ go build -buildmode=c-shared -o go.lib .
 python main.py
 ```
 
+Note that when calling Python from Go, the entry point remains the Python script. The Go shared library is loaded into the Python process, which then starts the Go logic.
+
 ## API Reference
 
 ### Python API
@@ -231,6 +230,8 @@ python main.py
 | `result.Get()`                          | Get result as `(any, error)`                 |
 | `handle.MethodCall(name, args...)`      | Call method on Python instance               |
 | `handle.Close()`                        | Release Python instance                      |
+
+See [Go API Reference](https://pkg.go.dev/github.com/ray4go/gopylink#pkg-index) for more details.
 
 ## Type Conversion
 
