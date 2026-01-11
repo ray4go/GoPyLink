@@ -24,16 +24,16 @@ func (r PythonResult) Get() (any, error) {
 }
 
 // PythonObjectHandle represents a handle to a Python class instance.
-type PythonObjectHandle ray.PythonObjectHandle
+type PythonObjectHandle ray.PyLocalInstance
 
 // MethodCall calls a method on the local Python class instance.
 func (h *PythonObjectHandle) MethodCall(methodName string, args ...any) PythonResult {
-	return PythonResult((*ray.PythonObjectHandle)(h).MethodCall(methodName, args...))
+	return PythonResult((*ray.PyLocalInstance)(h).MethodCall(methodName, args...))
 }
 
 // Close closes the Python class instance. So it can be garbage collected in Python side.
 func (h *PythonObjectHandle) Close() error {
-	return (*ray.PythonObjectHandle)(h).Close()
+	return (*ray.PyLocalInstance)(h).Close()
 }
 
 // PythonFuncCall executes a Python function by name with the provided arguments.
@@ -43,7 +43,7 @@ func PythonFuncCall(name string, args ...any) PythonResult {
 
 // NewPythonClassInstance initializes a new Python class instance.
 func NewPythonClassInstance(className string, args ...any) *PythonObjectHandle {
-	return (*PythonObjectHandle)(ray.NewLocalPyClassInstance(className, args...))
+	return (*PythonObjectHandle)(ray.NewPyLocalInstance(className, args...))
 }
 
 // Get is used to get the result of python function / method call.
